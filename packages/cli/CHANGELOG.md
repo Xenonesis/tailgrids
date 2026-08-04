@@ -1,5 +1,11 @@
 # @tailgrids/cli
 
+## 1.4.3
+
+### Patch Changes
+
+- Fixes #170 #171 #173 #175 #176
+
 ## 1.4.2
 
 ### Patch Changes
