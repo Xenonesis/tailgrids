@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tailgrids/tailgrids.git",
+    "url": "git+https://github.com/TailGrids/tailgrids.git",
     "directory": "packages/icons"
   },
   "homepage": "https://tailgrids.com",
