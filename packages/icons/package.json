@@ -8,6 +8,9 @@
   "scripts": {
     "build": "tsx ./src/index.ts"
   },
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -17,13 +20,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tailgrids/oss.git",
-    "directory": "/packages/icons"
+    "url": "git+https://github.com/Tailgrids/tailgrids.git",
+    "directory": "packages/icons"
   },
   "homepage": "https://tailgrids.com",
-  "exports": {
-    ".": "./dist/index.js"
-  },
   "dependencies": {
     "@babel/core": "^7.28.5",
     "@babel/plugin-transform-react-jsx": "^7.27.1",
