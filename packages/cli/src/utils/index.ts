@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { existsSync } from "node:fs";
 
 type GetDefaultTargetPathParams = {
   type: string;
@@ -19,15 +18,6 @@ export function getDefaultTargetPath({
   const baseDir = srcExists ? "src" : "";
 
   return path.join(cwd, baseDir, "components", "tailgrids", type, filename);
-}
-
-export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
-
-export async function detectPackageManager(): Promise<PackageManager> {
-  if (existsSync("pnpm-lock.yaml")) return "pnpm";
-  if (existsSync("yarn.lock")) return "yarn";
-  if (existsSync("bun.lockb")) return "bun";
-  return "npm";
 }
 
 export async function directoryExists(dirPath: string) {

@@ -1,9 +1,9 @@
-import { checkbox } from "@inquirer/prompts";
+import { checkbox, confirm } from "@inquirer/prompts";
+import { REGISTRIES } from "../../registries.ts";
+import type { Registry } from "../../types/registry.ts";
 import { installDependencies } from "../../utils/installing-dependencies.ts";
 import { logger } from "../../utils/logger.ts";
-import { addFiles } from "./helpers.ts";
-import type { Registry } from "../../types/registry.ts";
-import { REGISTRIES } from "../../registries.ts";
+import { addFiles, getFileTargets } from "./helpers.ts";
 
 type HandleAddCommandParams = {
   components: string[];
@@ -35,15 +35,20 @@ export async function handleAddCommand({ components }: HandleAddCommandParams) {
     const allDevDependencies = new Set<string>();
 
     const processedComponentIds = new Set<string>();
+    let addedComponents = 0;
+    let missingComponents = 0;
 
     for (const componentId of selectedComponentsId) {
-      await handleComponentRegistry({
+      const result = await handleComponentRegistry({
         registries,
         componentId,
         processedComponentIds,
         allDependencies,
         allDevDependencies
       });
+
+      if (result === "added") addedComponents += 1;
+      if (result === "missing") missingComponents += 1;
     }
 
     await installDependencies({
@@ -51,7 +56,12 @@ export async function handleAddCommand({ components }: HandleAddCommandParams) {
       devDependencies: Array.from(allDevDependencies)
     });
 
-    logger.success("Components added successfully!");
+    if (
+      addedComponents > 0 ||
+      (selectedComponentsId.length > 1 && missingComponents > 0)
+    ) {
+      logger.success("Components added successfully!");
+    }
   } catch (error) {
     logger.error("Failed to add components:\n" + (error as Error).message);
     process.exit(1);
@@ -66,14 +76,16 @@ type HandleComponentRegistryParams = {
   allDevDependencies: Set<string>;
 };
 
+type ComponentAddResult = "added" | "missing" | "skipped";
+
 async function handleComponentRegistry({
   registries,
   componentId,
   processedComponentIds,
   allDependencies,
   allDevDependencies
-}: HandleComponentRegistryParams) {
-  if (processedComponentIds.has(componentId)) return;
+}: HandleComponentRegistryParams): Promise<ComponentAddResult> {
+  if (processedComponentIds.has(componentId)) return "skipped";
 
   const componentRegistry = registries.find(({ id }) => id === componentId);
 
@@ -83,10 +95,32 @@ async function handleComponentRegistry({
     logger.warn(
       `Component: "${componentId}" not found in registry, skipping...`
     );
-    return;
+    return "missing";
   }
 
-  await addFiles({ files: componentRegistry.files });
+  const fileTargets = await getFileTargets({
+    files: componentRegistry.files
+  });
+  const existingFiles = fileTargets.filter(file => file.exists);
+
+  if (existingFiles.length > 0) {
+    const shouldOverwrite = await confirm({
+      message: `Component "${componentRegistry.name}" already has file(s):\n${existingFiles
+        .map(file => `  - ${file.relativePath}`)
+        .join("\n")}\nOverwrite?`,
+      default: false
+    });
+
+    if (!shouldOverwrite) {
+      logger.warn(`Skipped component: ${componentRegistry.name}`);
+      return "skipped";
+    }
+  }
+
+  await addFiles({
+    files: componentRegistry.files,
+    overwriteExisting: existingFiles.length > 0
+  });
 
   // Store dependencies to install
   componentRegistry.dependencies?.forEach(dep => allDependencies.add(dep));
@@ -107,4 +141,5 @@ async function handleComponentRegistry({
   }
 
   logger.info(`✓ ${componentRegistry.name}`);
+  return "added";
 }

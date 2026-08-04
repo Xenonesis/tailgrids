@@ -52,6 +52,14 @@ components/
     └── dialog.tsx
 ```
 
+When a component would replace one or more existing files, the CLI lists those
+files and asks for confirmation once for that component. This also applies to
+components added automatically as dependencies. Declining the prompt leaves the
+existing files unchanged and skips that component's package dependencies.
+
+The CLI detects the package manager used by the current project and installs
+component dependencies with npm, pnpm, Yarn, or Bun as appropriate.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.

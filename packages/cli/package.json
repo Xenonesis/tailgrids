@@ -38,10 +38,11 @@
     "@types/node": "^22.15.3",
     "prettier": "^3.6.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.2",
-    "tsx": "^4.20.6"
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@antfu/install-pkg": "^2.0.1",
     "@inquirer/prompts": "^7.8.6",
     "chalk": "^5.6.2",
     "commander": "^14.0.1",

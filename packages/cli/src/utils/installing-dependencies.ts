@@ -1,7 +1,10 @@
+import {
+  detectPackageManager,
+  installPackage,
+  type InstallPackageOptions
+} from "@antfu/install-pkg";
 import chalk from "chalk";
-import { execSync } from "child_process";
 import ora from "ora";
-import { detectPackageManager, type PackageManager } from "./index.ts";
 import { logger } from "./logger.ts";
 
 type InstallDependenciesParams =
@@ -11,7 +14,8 @@ type InstallDependenciesParams =
 export async function installDependencies(params: InstallDependenciesParams) {
   const { dependencies = [], devDependencies = [] } = params;
 
-  const packageManager = await detectPackageManager();
+  const cwd = process.cwd();
+  const packageManager = await detectPackageManager(cwd);
   const spinner = ora();
 
   try {
@@ -24,9 +28,11 @@ export async function installDependencies(params: InstallDependenciesParams) {
       logger.break();
 
       spinner.start("Installing dependencies");
-      const addCommand = getAddCommand(packageManager, false);
-      execSync(`${addCommand} ${dependencies.join(" ")}`, {
-        stdio: "pipe"
+      await installDependenciesWithDetectedPackageManager({
+        dependencies,
+        cwd,
+        packageManager,
+        dev: false
       });
 
       spinner.succeed("Dependencies installed");
@@ -39,9 +45,11 @@ export async function installDependencies(params: InstallDependenciesParams) {
       });
 
       spinner.start("Installing devDependencies");
-      const addCommand = getAddCommand(packageManager, true);
-      execSync(`${addCommand} ${devDependencies.join(" ")}`, {
-        stdio: "pipe"
+      await installDependenciesWithDetectedPackageManager({
+        dependencies: devDependencies,
+        cwd,
+        packageManager,
+        dev: true
       });
 
       spinner.succeed("Dev dependencies installed");
@@ -58,27 +66,24 @@ export async function installDependencies(params: InstallDependenciesParams) {
   }
 }
 
-function getAddCommand(packageManager: PackageManager, isDev: boolean): string {
-  const commands: Record<PackageManager, { regular: string; dev: string }> = {
-    npm: {
-      regular: "npm install",
-      dev: "npm install --save-dev"
-    },
-    pnpm: {
-      regular: "pnpm add",
-      dev: "pnpm add -D"
-    },
-    yarn: {
-      regular: "yarn add",
-      dev: "yarn add -D"
-    },
-    bun: {
-      regular: "bun add",
-      dev: "bun add -D"
-    }
+async function installDependenciesWithDetectedPackageManager({
+  dependencies,
+  cwd,
+  packageManager,
+  dev
+}: {
+  dependencies: string[];
+  cwd: string;
+  packageManager: Awaited<ReturnType<typeof detectPackageManager>>;
+  dev: boolean;
+}) {
+  const options: InstallPackageOptions = {
+    cwd,
+    dev,
+    silent: true
   };
 
-  return isDev
-    ? commands[packageManager].dev
-    : commands[packageManager].regular;
+  if (packageManager) options.packageManager = packageManager;
+
+  await installPackage(dependencies, options);
 }
